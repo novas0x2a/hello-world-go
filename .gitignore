@@ -1,0 +1,4 @@
+/.coverage
+/vendor
+/dist
+/hello-world-go
