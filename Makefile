@@ -4,6 +4,7 @@ MAJOR_VERSION := 0
 MINOR_VERSION := 0
 PATCH_VERSION := 1
 PRE_VERSION   := dev
+HELM_VERSION  := 0.0.1
 UPSTREAM      := upstream/master
 
 default: all
@@ -48,6 +49,10 @@ docker-client: ## run docker client image
 		-it                                             \
 		--entrypoint sh                                 \
 		$(CONTAINER):dev
+
+.PHONY: helm
+helm:
+	helm package --version $(SOFTWARE_VERSION)+$(HELM_VERSION) deploy/hello
 
 test-sequence-hook:
 	$(MAKE) clean all lint cleancheck clean
