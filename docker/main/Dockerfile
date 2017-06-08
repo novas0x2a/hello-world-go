@@ -43,7 +43,7 @@ MAINTAINER Mike Lundy <mike@fluffypenguin.org>
 EXPOSE 80
 EXPOSE 443
 
-ENTRYPOINT ["/usr/bin/hello-world-go"]
+ENTRYPOINT ["hello-world-go"]
 
 RUN apk upgrade --available --no-cache  && \
     apk add --update --no-cache curl
