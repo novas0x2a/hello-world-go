@@ -24,7 +24,7 @@ SPACE +=
 
 E = @echo$(SPACE)
 
-ifdef VERBOSE
+ifeq ($(VERBOSE),1)
     $(warning starting $(MAKE) for goal(s) "$(MAKECMDGOALS)")
     $(warning ***** $(shell date))
     Q =

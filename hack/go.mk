@@ -89,7 +89,7 @@ else
     BUILDFLAGS = $(RELEASEFLAGS) -ldflags "$(LDFLAGS)"
 endif
 
-ifdef VERBOSE
+ifeq ($(VERBOSE),1)
     GENFLAGS   += -x -v
     BUILDFLAGS += -v
 endif
