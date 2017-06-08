@@ -8,6 +8,7 @@ docker: ## build the docker image
 	docker build \
 		--build-arg QUICK_DIST=$(QUICK_DIST) \
 		--build-arg MODULE_NAME=$(PACKAGE)   \
+		--build-arg VERBOSE=$(VERBOSE)       \
 		-t $(CONTAINER):$(CONTAINER_VERSION) \
 		-f docker/main/Dockerfile            \
 		$(CURDIR)

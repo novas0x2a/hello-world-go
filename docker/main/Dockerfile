@@ -11,7 +11,10 @@ RUN apk upgrade --available --no-cache  && \
 
 ARG MODULE_NAME
 ARG QUICK_DIST
+ARG VERBOSE=0
+
 ENV MODULE_PATH $GOPATH/src/$MODULE_NAME
+
 WORKDIR $MODULE_PATH
 
 # This kinda weird order makes sure that only changes to these files cause a
