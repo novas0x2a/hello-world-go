@@ -6,6 +6,7 @@ PATCH_VERSION := 1
 PRE_VERSION   := dev
 HELM_VERSION  := 0.0.1
 UPSTREAM      := upstream/master
+CONTAINER     := novas0x2a/hello
 
 default: all
 
@@ -27,10 +28,6 @@ vendor-hook:
 	go install ./vendor/golang.org/x/tools/cmd/gotype
 	go install ./vendor/github.com/gordonklaus/ineffassign
 	go install ./vendor/github.com/client9/misspell/cmd/misspell
-
-CONTAINER          = novas0x2a/hello
-BUILDENV_CONTAINER = novas0x2a/go-proto
-BUILDENV_VERSION   = 1.8.3
 
 .PHONY: docker-server
 docker-server: ## run docker server image
