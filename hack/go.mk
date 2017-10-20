@@ -18,7 +18,7 @@
 #   SKIP_DEP_INSTALL  (ifdef, immediate)    bypass dep auto-installation
 #
 # Writes (deferred):
-#   ALL_PACKAGES     all (non-vendored) packages detected by glide
+#   ALL_PACKAGES     all (non-vendored) packages detected by dep
 #   PACKAGES         packages used for each build target (default: ALL_PACKAGES)
 #
 #   GENPACKAGES      packages used for generate target (default: PACKAGES)
@@ -33,7 +33,7 @@
 #   TESTFLAGS       flags used for test target (default: BUILDFLAGS)
 #
 #   DISTNAME        name of the dist package (w/o "tar.*")
-#   GLIDE           path to glide
+#   DEP             path to dep
 #   VENDORBIN       path to the vendor bin directory
 #   PATH            adds VENDORBIN to path
 #
@@ -46,9 +46,9 @@
 VENDORBIN   = $(CURDIR)/vendor/bin
 PATH       := $(VENDORBIN):$(PATH)
 
-GLIDE := $(shell PATH="$(PATH)" command -v glide $(EAT_STDERR))
-ifndef GLIDE
-    GLIDE = $(error "glide is not installed, please run make deps")
+DEP := $(shell PATH="$(PATH)" command -v dep $(EAT_STDERR))
+ifndef DEP
+    DEP = $(error "dep is not installed, please run make deps")
 endif
 
 ifeq ($(PACKAGE),)
@@ -101,7 +101,7 @@ TESTTOOL        = go test
 
 BIN_FILTER      = $(shell go list -f '{{.Name}}\#\#\#{{.ImportPath}}' $(1) | grep 'main\#\#\#' | sed -e 's,.*\#\#\#,,')
 
-ALL_PACKAGES    = $(shell $(GLIDE) novendor)
+ALL_PACKAGES    = $(shell go list ./...)
 PACKAGES        = $(ALL_PACKAGES)
 GENPACKAGES     = $(PACKAGES)
 BUILDPACKAGES   = $(PACKAGES)
@@ -109,7 +109,7 @@ TESTPACKAGES    = $(PACKAGES)
 INSTALLPACKAGES = $(PACKAGES)
 DISTPACKAGES   ?= $(call BIN_FILTER,$(PACKAGES))
 
-unexport GLIDE ALL_PACKAGES PACKAGES GENPACKAGES BUILDPACKAGES TESTPACKAGES INSTALLPACKAGES DISTPACKAGES
+unexport DEP ALL_PACKAGES PACKAGES GENPACKAGES BUILDPACKAGES TESTPACKAGES INSTALLPACKAGES DISTPACKAGES
 unexport GENFLAGS BUILDFLAGS INSTALLFLAGS TESTFLAGS DEBUGFLAGS RELEASEFLAGS LDFLAGS
 
 .PHONY: default
@@ -148,15 +148,15 @@ dist-after:
 	$(Q)rm -rf dist/$(DISTDIR)
 	$(Q)chown -R $(DIST_USER):$(DIST_GROUP) dist
 
-vendor: glide.lock
+vendor: Gopkg.lock
 	$(MAKE) vendor-before vendor-hook vendor-after
 	touch -r $< vendor
 
 .PHONY: vendor-before
 vendor-before:
 	$(E)installing deps
-	test -e "$(VENDORBIN)/glide" >/dev/null 2>&1 || GOBIN="$(VENDORBIN)" go get -v github.com/Masterminds/glide
-	glide install --strip-vendor
+	test -e "$(VENDORBIN)/dep" >/dev/null 2>&1 || GOBIN="$(VENDORBIN)" go get -v github.com/golang/dep/cmd/dep
+	dep ensure -vendor-only
 
 .PHONY: vendor-hook
 vendor-hook: GOBIN=$(VENDORBIN)
@@ -164,19 +164,19 @@ vendor-hook:
 
 .PHONY: vendor-after
 vendor-after:
-	test -e "$(VENDORBIN)/glide" >/dev/null 2>&1 || GOBIN="$(VENDORBIN)" go get -v github.com/Masterminds/glide
+	test -e "$(VENDORBIN)/dep" >/dev/null 2>&1 || GOBIN="$(VENDORBIN)" go get -v github.com/golang/dep/cmd/dep
 
 .PHONY: vendor-import
 vendor-import: ## restore the vendor dir from backup (requires the VENDORBACKUP variable)
 	test -n "$(VENDORBACKUP)" # make sure VENDORBACKUP is defined
-	cmp -s glide.lock $(VENDORBACKUP)/glide.lock # make sure the lock file is the same
+	cmp -s Gopkg.lock $(VENDORBACKUP)/Gopkg.lock # make sure the lock file is the same
 	rm -rf ./vendor
-	cp -ar $(VENDORBACKUP)/{vendor,glide.lock} ./
+	cp -ar $(VENDORBACKUP)/{vendor,Gopkg.lock} ./
 
 .PHONY: vendor-export
 vendor-export: ## back the vendor dir up somewhere (requires the VENDORBACKUP variable)
 	test -n "$(VENDORBACKUP)" # make sure VENDORBACKUP is defined
-	cp -ar {vendor,glide.lock} $(VENDORBACKUP)/
+	cp -ar {vendor,Gopkg.lock} $(VENDORBACKUP)/
 
 .PHONY: deps
 ifdef SKIP_DEP_INSTALL
@@ -201,7 +201,7 @@ build: deps ## build all packages
 
 .PHONY: install
 install: deps ## install all packages
-	$(Q)if ! go install $(INSTALLFLAGS) $(INSTALLPACKAGES); then\
+	$(Q)if ! $(CAPTURE)$(SHELL) -xc 'go install $(INSTALLFLAGS) $(INSTALLPACKAGES)'; then\
 		echo "********************************************************************************" >&2;\
 		echo "********************************************************************************" >&2;\
 		echo "If the above failed with a permission denied, you" >&2;\
@@ -240,43 +240,4 @@ lint-hook:
 # check _installed_ code.
 # https://github.com/golang/go/issues/10249
 gometalinter: install ## run linter on everything
-	gometalinter              \
-		--enable-gc           \
-		--deadline 40s        \
-		--exclude bindata     \
-		--exclude .pb.        \
-		--exclude vendor      \
-		--skip vendor         \
-		--disable-all         \
-		--enable=errcheck     \
-		--enable=goconst      \
-		--enable=gofmt        \
-		--enable=golint       \
-		--enable=gosimple     \
-		--enable=gotype       \
-		--enable=ineffassign  \
-		--enable=misspell     \
-		--enable=vet          \
-		--enable=vetshadow    \
-		./...
-
-# Set the repo up to handle gometalinter
-.PHONY: setup-gometalinter
-setup-gometalinter:
-	$(GLIDE) get --test --strip-vendor \
-                 github.com/alecthomas/gometalinter \
-                 github.com/kisielk/errcheck \
-                 github.com/jgautheron/goconst/cmd/goconst \
-                 github.com/golang/lint/golint \
-                 honnef.co/go/simple/cmd/gosimple \
-                 golang.org/x/tools/cmd/gotype \
-                 github.com/client9/misspell/cmd/misspell
-	$(E)Now add the following lines to the vendor-hook in your Makefile:
-	$(E)'go build -o $$(VENDORBIN)/gometalinter vendor/github.com/alecthomas/gometalinter/*.go'
-	$(E)'go build -o $$(VENDORBIN)/errcheck     vendor/github.com/kisielk/errcheck/*.go'
-	$(E)'go build -o $$(VENDORBIN)/goconst      vendor/github.com/jgautheron/goconst/cmd/goconst/*.go'
-	$(E)'go build -o $$(VENDORBIN)/golint       vendor/github.com/golang/lint/golint/*.go'
-	$(E)'go build -o $$(VENDORBIN)/gosimple     vendor/honnef.co/go/simple/cmd/gosimple/*.go'
-	$(E)'go build -o $$(VENDORBIN)/gotype       vendor/golang.org/x/tools/cmd/gotype/*.go'
-	$(E)'go build -o $$(VENDORBIN)/ineffassign  vendor/github.com/gordonklaus/ineffassign/*.go'
-	$(E)'go build -o $$(VENDORBIN)/misspell     vendor/github.com/client9/misspell/cmd/misspell/*.go'
+	gometalinter --config=.gometalintrc ./...

@@ -1,5 +1,13 @@
-CONTAINER_VERSION ?= $(SOFTWARE_VERSION)
+DOCKER_COMPOSE := $(shell command -v docker-compose)
 
+.PHONY: docker-up docker-down
+docker-up:
+	$(DOCKER_COMPOSE) up --build
+
+docker-down:
+	$(DOCKER_COMPOSE) down --remove-orphans
+
+CONTAINER_VERSION ?= $(SOFTWARE_VERSION)
 .PHONY: docker
 docker: ## build the docker image
 	$(Q)if [ -z "$(CONTAINER)" ]; then echo "Must set CONTAINER"; exit 1; fi

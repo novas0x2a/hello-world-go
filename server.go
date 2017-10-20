@@ -8,13 +8,10 @@ import (
 )
 
 type (
+	// HelloServer just holds the server, man
 	HelloServer struct {
 		http.Server
 		DefaultSender string
-	}
-
-	HelloHandler struct {
-		Server *HelloServer
 	}
 )
 
@@ -66,9 +63,6 @@ func addArgs(app *kingpin.Application) {
 			server.Handler = mux
 		}
 
-		if err := server.ListenAndServe(); err != nil {
-			return err
-		}
-		return nil
+		return server.ListenAndServe()
 	})
 }

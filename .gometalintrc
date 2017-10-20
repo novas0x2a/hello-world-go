@@ -1,0 +1,24 @@
+{
+    "Enable": [
+        "errcheck",
+        "goconst",
+        "gofmt",
+        "golint",
+        "megacheck",
+        "ineffassign",
+        "misspell",
+        "vet",
+        "vetshadow"
+    ],
+    "VendoredLinters": true,
+    "EnableGC": true,
+    "Deadline": "10s",
+    "Exclude": [
+        "bindata",
+        ".pb.",
+        "vendor"
+    ],
+    "Skip": [
+        "vendor"
+    ]
+}

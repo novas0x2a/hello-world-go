@@ -1,5 +1,5 @@
 # First, the build container!
-FROM golang:1.8.3-alpine as builder
+FROM golang:1.9.1-alpine as builder
 
 MAINTAINER Mike Lundy <mike@fluffypenguin.org>
 
@@ -13,13 +13,15 @@ ARG MODULE_NAME
 ARG QUICK_DIST
 ARG VERBOSE=0
 
+RUN test -n "${MODULE_NAME}"
+
 ENV MODULE_PATH $GOPATH/src/$MODULE_NAME
 
 WORKDIR $MODULE_PATH
 
 # This kinda weird order makes sure that only changes to these files cause a
 # docker cache miss on the `make deps`
-COPY Makefile glide.* $MODULE_PATH/
+COPY Makefile Gopkg.* $MODULE_PATH/
 COPY hack $MODULE_PATH/hack
 
 # Should come out of cache unless the above files changed
@@ -36,7 +38,7 @@ RUN make SKIP_DEP_INSTALL=1 dist        && \
     tar -C /tmp/dist --strip-components=1 -xf $MODULE_PATH/dist/tarball
 
 # Now, the runtime container
-FROM golang:1.8.3-alpine as runtime
+FROM golang:1.9.1-alpine as runtime
 
 MAINTAINER Mike Lundy <mike@fluffypenguin.org>
 

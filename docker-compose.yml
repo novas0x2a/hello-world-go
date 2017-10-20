@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: docker/main/Dockerfile
+      args:
+        - MODULE_NAME=${PACKAGE}
+        - VERBOSE=${VERBOSE}
+        - QUICK_DIST=${QUICK_DIST}
+    ports:
+      - 8080:80
+      - 8443:443

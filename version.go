@@ -34,7 +34,7 @@ func PackageVersion() string {
 }
 
 // ReleaseBuild returns whether this is a release build
-func ReleaseBuild() bool {
+func ReleaseBuild() bool { // nolint
 	return releaseBuild
 }
 

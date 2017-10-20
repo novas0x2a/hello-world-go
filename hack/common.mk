@@ -32,6 +32,7 @@ ifeq ($(VERBOSE),1)
 else
     Q = @
     EAT_STDERR = 2>/dev/null
+    CAPTURE := $(shell command -v chronic 2>/dev/null) 
 endif
 
 SHELL := bash -o errexit -o pipefail -o nounset
